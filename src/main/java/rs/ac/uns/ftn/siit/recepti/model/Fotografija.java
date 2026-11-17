@@ -37,5 +37,8 @@ public class Fotografija {
     @JoinColumn(name = "korak_id")
     private KorakPripreme korak;
 
-    // veza ka komentaru se dodaje kad napravimo entitet Komentar
+    //Popunjeno samo ako je ovo fotografija uz komentar
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "komentar_id")
+    private Komentar komentar;
 }
