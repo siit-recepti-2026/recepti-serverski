@@ -7,6 +7,8 @@ import lombok.Setter;
 import rs.ac.uns.ftn.siit.recepti.model.enums.UlogaKorisnika;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "korisnik")
@@ -45,5 +47,14 @@ public class Korisnik {
     @JoinColumn(name = "region_id", nullable = false)
     private Lokacija region;
 
-    // profilnaSlika se dodaje kad napravimo entitet Fotografija
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profilna_slika_id")
+    private Fotografija profilnaSlika;
+
+    @ManyToMany
+    @JoinTable(
+            name = "omiljeni_recept",
+            joinColumns = @JoinColumn(name = "korisnik_id"),
+            inverseJoinColumns = @JoinColumn(name = "recept_id"))
+    private Set<Recept> omiljeniRecepti = new HashSet<>();
 }
