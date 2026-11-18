@@ -13,7 +13,9 @@ import rs.ac.uns.ftn.siit.recepti.config.SecurityConfig;
 
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,7 +34,9 @@ class AdminTipoviIKategorijeControllerTests {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void administratorDodajeStavkuSaObrezanimNazivom() throws Exception {
-        when(service.dodaj("tipovi-jela", "Pica")).thenReturn(new AdminPregled.Stavka(1L, "Pica", true));
+        when(service.dodaj("tipovi-jela", "Pica"))
+                .thenReturn(new AdminTipoviIKategorijeService.RezultatDodavanja(
+                        new AdminPregled.Stavka(1L, "Pica", true), false));
 
         mvc.perform(post("/api/admin/tipovi-jela")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"naziv\":\"  Pica  \"}"))
@@ -65,5 +69,47 @@ class AdminTipoviIKategorijeControllerTests {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"naziv\":\"Pica\"}"))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(service);
+    }
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void administratorMozeDaIzmeniIDeaktiviraStavku() throws Exception {
+        when(service.izmeni("kategorije-namirnica", 1L, "Voće"))
+                .thenReturn(new AdminPregled.Stavka(1L, "Voće", true));
+        when(service.deaktiviraj("kategorije-namirnica", 1L))
+                .thenReturn(new AdminPregled.Stavka(1L, "Voće", false));
+
+        mvc.perform(put("/api/admin/kategorije-namirnica/1")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"naziv\":\"Voće\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.naziv").value("Voće"))
+                .andExpect(jsonPath("$.aktivan").value(true));
+
+        mvc.perform(delete("/api/admin/kategorije-namirnica/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.aktivan").value(false));
+    }
+
+    @Test
+    @WithMockUser(roles = "KORISNIK")
+    void obicanKorisnikNeMozeDaIzmeniNitiDaDeaktiviraStavku() throws Exception {
+        mvc.perform(put("/api/admin/kategorije-namirnica/1")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"naziv\":\"Voće\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/admin/kategorije-namirnica/1"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(service);
+    }
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void vracaPostojecuStavkuKadJePonovoAktivirana() throws Exception {
+        when(service.dodaj("tipovi-jela", "Picaa"))
+                .thenReturn(new AdminTipoviIKategorijeService.RezultatDodavanja(
+                        new AdminPregled.Stavka(7L, "Picaa", true), true));
+
+        mvc.perform(post("/api/admin/tipovi-jela")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"naziv\":\"Picaa\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.aktivan").value(true));
     }
 }
