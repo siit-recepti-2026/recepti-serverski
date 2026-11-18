@@ -43,6 +43,16 @@ public class GlobalExceptionHandler {
         return odgovor(HttpStatus.BAD_REQUEST, e.getMessage(), Map.of());
     }
 
+    @ExceptionHandler(NeuspesnaPrijavaException.class)
+    public ResponseEntity<GreskaOdgovor> neuspesnaPrijava(NeuspesnaPrijavaException e) {
+        return odgovor(HttpStatus.UNAUTHORIZED, e.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(NeaktiviranNalogException.class)
+    public ResponseEntity<GreskaOdgovor> neaktiviranNalog(NeaktiviranNalogException e) {
+        return odgovor(HttpStatus.FORBIDDEN, e.getMessage(), Map.of());
+    }
+
     //Dva istovremena zahteva sa istim podacima: provera prodje za oba, ali baza odbije drugi
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<GreskaOdgovor> narusenoOgranicenje(DataIntegrityViolationException e) {
