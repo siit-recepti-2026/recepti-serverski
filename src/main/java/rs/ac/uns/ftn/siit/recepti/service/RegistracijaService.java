@@ -1,18 +1,14 @@
 package rs.ac.uns.ftn.siit.recepti.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.ac.uns.ftn.siit.recepti.dto.RegistracijaZahtev;
 import rs.ac.uns.ftn.siit.recepti.exception.KonfliktException;
 import rs.ac.uns.ftn.siit.recepti.model.Korisnik;
-import rs.ac.uns.ftn.siit.recepti.model.VerifikacioniToken;
-import rs.ac.uns.ftn.siit.recepti.model.enums.TipTokena;
 import rs.ac.uns.ftn.siit.recepti.model.enums.UlogaKorisnika;
 import rs.ac.uns.ftn.siit.recepti.repository.KorisnikRepository;
-import rs.ac.uns.ftn.siit.recepti.repository.VerifikacioniTokenRepository;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -22,14 +18,9 @@ import java.util.Locale;
 public class RegistracijaService {
 
     private final KorisnikRepository korisnikRepository;
-    private final VerifikacioniTokenRepository tokenRepository;
     private final LokacijaService lokacijaService;
-    private final TokenService tokenService;
-    private final EmailService emailService;
+    private final AktivacijaService aktivacijaService;
     private final PasswordEncoder passwordEncoder;
-
-    @Value("${app.aktivacija.trajanje-sati}")
-    private long trajanjeAktivacijeSati;
 
     //Sve je u jednoj transakciji: ako slanje mejla ne uspe, korisnik se ne cuva,
     //pa moze ponovo da se registruje sa istim podacima
@@ -55,15 +46,7 @@ public class RegistracijaService {
         korisnik.setRegion(lokacijaService.pronadjiIliNapravi(zahtev.region()));
         korisnikRepository.save(korisnik);
 
-        String token = tokenService.generisiToken();
-        VerifikacioniToken verifikacioniToken = new VerifikacioniToken();
-        verifikacioniToken.setToken(tokenService.hesiraj(token));
-        verifikacioniToken.setTip(TipTokena.AKTIVACIJA);
-        verifikacioniToken.setVaziDo(LocalDateTime.now().plusHours(trajanjeAktivacijeSati));
-        verifikacioniToken.setKorisnik(korisnik);
-        tokenRepository.save(verifikacioniToken);
-
-        emailService.posaljiAktivacioniMejl(email, korisnickoIme, token);
+        aktivacijaService.posaljiAktivacioniLink(korisnik);
     }
 
     @Transactional(readOnly = true)
