@@ -9,11 +9,16 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import rs.ac.uns.ftn.siit.recepti.service.JwtService;
 
 import java.util.List;
 
@@ -36,8 +41,32 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().authenticated());
+                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
+                        .anyRequest().authenticated())
+                //Svaki zahtev sa zaglavljem "Authorization: Bearer <token>" proverava se pomocu JwtDecoder-a
+                .oauth2ResourceServer(o -> o
+                        .bearerTokenResolver(bearerTokenResolver())
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();
+    }
+
+    //Uloga iz tokena ("uloga": "ADMINISTRATOR") postaje ROLE_ADMINISTRATOR, sto proverava hasRole
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter uloge = new JwtGrantedAuthoritiesConverter();
+        uloge.setAuthoritiesClaimName(JwtService.CLAIM_ULOGA);
+        uloge.setAuthorityPrefix("ROLE_");
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(uloge);
+        return converter;
+    }
+
+    //Na /api/auth/** token se ne cita, pa istekao token u localStorage ne moze da blokira ponovnu prijavu
+    private BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver podrazumevani = new DefaultBearerTokenResolver();
+        return zahtev -> zahtev.getRequestURI().startsWith("/api/auth/") ? null : podrazumevani.resolve(zahtev);
     }
 
     @Bean

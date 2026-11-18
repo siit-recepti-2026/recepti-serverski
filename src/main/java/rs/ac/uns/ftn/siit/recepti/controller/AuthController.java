@@ -14,8 +14,11 @@ import rs.ac.uns.ftn.siit.recepti.dto.AktivacijaZahtev;
 import rs.ac.uns.ftn.siit.recepti.dto.DostupnostOdgovor;
 import rs.ac.uns.ftn.siit.recepti.dto.PonovnoSlanjeZahtev;
 import rs.ac.uns.ftn.siit.recepti.dto.PorukaOdgovor;
+import rs.ac.uns.ftn.siit.recepti.dto.PrijavaOdgovor;
+import rs.ac.uns.ftn.siit.recepti.dto.PrijavaZahtev;
 import rs.ac.uns.ftn.siit.recepti.dto.RegistracijaZahtev;
 import rs.ac.uns.ftn.siit.recepti.service.AktivacijaService;
+import rs.ac.uns.ftn.siit.recepti.service.PrijavaService;
 import rs.ac.uns.ftn.siit.recepti.service.RegistracijaService;
 
 @RestController
@@ -25,6 +28,7 @@ public class AuthController {
 
     private final RegistracijaService registracijaService;
     private final AktivacijaService aktivacijaService;
+    private final PrijavaService prijavaService;
 
     @PostMapping("/registracija")
     @ResponseStatus(HttpStatus.CREATED)
@@ -55,5 +59,10 @@ public class AuthController {
     public PorukaOdgovor ponovoPosaljiAktivaciju(@Valid @RequestBody PonovnoSlanjeZahtev zahtev) {
         aktivacijaService.ponovoPosalji(zahtev.email());
         return new PorukaOdgovor("Ako postoji neaktiviran nalog sa ovim emailom, poslat je novi link za aktivaciju.");
+    }
+
+    @PostMapping("/prijava")
+    public PrijavaOdgovor prijava(@Valid @RequestBody PrijavaZahtev zahtev) {
+        return prijavaService.prijavi(zahtev);
     }
 }
