@@ -38,6 +38,11 @@ public class GlobalExceptionHandler {
         return odgovor(HttpStatus.CONFLICT, e.getMessage(), Map.of(e.getPolje(), e.getMessage()));
     }
 
+    @ExceptionHandler(NeispravanZahtevException.class)
+    public ResponseEntity<GreskaOdgovor> neispravanZahtev(NeispravanZahtevException e) {
+        return odgovor(HttpStatus.BAD_REQUEST, e.getMessage(), Map.of());
+    }
+
     //Dva istovremena zahteva sa istim podacima: provera prodje za oba, ali baza odbije drugi
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<GreskaOdgovor> narusenoOgranicenje(DataIntegrityViolationException e) {

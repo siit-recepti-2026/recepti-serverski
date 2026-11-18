@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import rs.ac.uns.ftn.siit.recepti.dto.AktivacijaZahtev;
 import rs.ac.uns.ftn.siit.recepti.dto.DostupnostOdgovor;
+import rs.ac.uns.ftn.siit.recepti.dto.PonovnoSlanjeZahtev;
 import rs.ac.uns.ftn.siit.recepti.dto.PorukaOdgovor;
 import rs.ac.uns.ftn.siit.recepti.dto.RegistracijaZahtev;
+import rs.ac.uns.ftn.siit.recepti.service.AktivacijaService;
 import rs.ac.uns.ftn.siit.recepti.service.RegistracijaService;
 
 @RestController
@@ -21,6 +24,7 @@ import rs.ac.uns.ftn.siit.recepti.service.RegistracijaService;
 public class AuthController {
 
     private final RegistracijaService registracijaService;
+    private final AktivacijaService aktivacijaService;
 
     @PostMapping("/registracija")
     @ResponseStatus(HttpStatus.CREATED)
@@ -38,5 +42,18 @@ public class AuthController {
     @GetMapping("/dostupnost/email")
     public DostupnostOdgovor dostupnostEmaila(@RequestParam String vrednost) {
         return new DostupnostOdgovor(registracijaService.dostupanEmail(vrednost));
+    }
+
+    //Poziva ga stranica veb aplikacije na koju vodi link iz mejla
+    @PostMapping("/aktivacija")
+    public PorukaOdgovor aktivacija(@Valid @RequestBody AktivacijaZahtev zahtev) {
+        aktivacijaService.aktiviraj(zahtev.token());
+        return new PorukaOdgovor("Nalog je aktiviran. Sada se mozete prijaviti.");
+    }
+
+    @PostMapping("/aktivacija/ponovo")
+    public PorukaOdgovor ponovoPosaljiAktivaciju(@Valid @RequestBody PonovnoSlanjeZahtev zahtev) {
+        aktivacijaService.ponovoPosalji(zahtev.email());
+        return new PorukaOdgovor("Ako postoji neaktiviran nalog sa ovim emailom, poslat je novi link za aktivaciju.");
     }
 }
