@@ -62,6 +62,11 @@ public class GlobalExceptionHandler {
         return odgovor(HttpStatus.FORBIDDEN, e.getMessage(), Map.of());
     }
 
+    @ExceptionHandler(NijePronadjenoException.class)
+    public ResponseEntity<GreskaOdgovor> nijePronadjeno(NijePronadjenoException e) {
+        return odgovor(HttpStatus.NOT_FOUND, e.getMessage(), Map.of());
+    }
+
     //Dva istovremena zahteva sa istim podacima: provera prodje za oba, ali baza odbije drugi
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<GreskaOdgovor> narusenoOgranicenje(DataIntegrityViolationException e) {
