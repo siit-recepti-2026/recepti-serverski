@@ -3,6 +3,7 @@ package rs.ac.uns.ftn.siit.recepti.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -41,6 +42,8 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        //Slike ucitava <img> tag, koji ne salje token, pa su dostupne bez prijave
+                        .requestMatchers(HttpMethod.GET, SlikeConfig.URL_PREFIKS + "**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
                         .anyRequest().authenticated())
                 //Svaki zahtev sa zaglavljem "Authorization: Bearer <token>" proverava se pomocu JwtDecoder-a
@@ -63,10 +66,15 @@ public class SecurityConfig {
         return converter;
     }
 
-    //Na /api/auth/** token se ne cita, pa istekao token u localStorage ne moze da blokira ponovnu prijavu
+    //Na /api/auth/** token se ne cita, pa istekao token u localStorage ne moze da blokira ponovnu prijavu.
+    //Isto vazi za slike: istekao token ne sme da sakrije sliku koja je javna.
     private BearerTokenResolver bearerTokenResolver() {
         DefaultBearerTokenResolver podrazumevani = new DefaultBearerTokenResolver();
-        return zahtev -> zahtev.getRequestURI().startsWith("/api/auth/") ? null : podrazumevani.resolve(zahtev);
+        return zahtev -> {
+            String putanja = zahtev.getRequestURI();
+            boolean bezTokena = putanja.startsWith("/api/auth/") || putanja.startsWith(SlikeConfig.URL_PREFIKS);
+            return bezTokena ? null : podrazumevani.resolve(zahtev);
+        };
     }
 
     @Bean

@@ -35,6 +35,9 @@ out/
 ### VS Code ###
 .vscode/
 
+### Otpremljene slike (cuvaju se na disku servera, ne u repozitorijumu) ###
+uploads/
+
 ### Lokalna podesavanja sa lozinkama (ne commitovati) ###
 application-local.properties
 .env
