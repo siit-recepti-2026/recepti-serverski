@@ -45,6 +45,9 @@ public class SecurityConfig {
                         //Slike ucitava <img> tag, koji ne salje token, pa su dostupne bez prijave
                         .requestMatchers(HttpMethod.GET, SlikeConfig.URL_PREFIKS + "**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
+                        //Spring prosledjuje greske (npr. 404 za nepostojecu adresu) na /error;
+                        //bez ovoga neprijavljen korisnik umesto prave greske dobija 401
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 //Svaki zahtev sa zaglavljem "Authorization: Bearer <token>" proverava se pomocu JwtDecoder-a
                 .oauth2ResourceServer(o -> o
@@ -67,12 +70,14 @@ public class SecurityConfig {
     }
 
     //Na /api/auth/** token se ne cita, pa istekao token u localStorage ne moze da blokira ponovnu prijavu.
-    //Isto vazi za slike: istekao token ne sme da sakrije sliku koja je javna.
+    //Isto vazi za slike i stranicu za greske: istekao token ne sme da sakrije javnu sliku ni pravu gresku.
     private BearerTokenResolver bearerTokenResolver() {
         DefaultBearerTokenResolver podrazumevani = new DefaultBearerTokenResolver();
         return zahtev -> {
             String putanja = zahtev.getRequestURI();
-            boolean bezTokena = putanja.startsWith("/api/auth/") || putanja.startsWith(SlikeConfig.URL_PREFIKS);
+            boolean bezTokena = putanja.startsWith("/api/auth/")
+                    || putanja.startsWith(SlikeConfig.URL_PREFIKS)
+                    || putanja.equals("/error");
             return bezTokena ? null : podrazumevani.resolve(zahtev);
         };
     }
