@@ -44,6 +44,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         //Slike ucitava <img> tag, koji ne salje token, pa su dostupne bez prijave
                         .requestMatchers(HttpMethod.GET, SlikeConfig.URL_PREFIKS + "**").permitAll()
+                        //Popularni i najnoviji recepti na pocetnoj strani su dostupni i bez prijave
+                        .requestMatchers(HttpMethod.GET, "/api/recepti/popularni", "/api/recepti/najnoviji").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
                         //Spring prosledjuje greske (npr. 404 za nepostojecu adresu) na /error;
                         //bez ovoga neprijavljen korisnik umesto prave greske dobija 401
