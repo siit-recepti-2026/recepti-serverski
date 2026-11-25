@@ -9,7 +9,10 @@ import rs.ac.uns.ftn.siit.recepti.model.TipIshrane;
 import rs.ac.uns.ftn.siit.recepti.model.TipJela;
 import rs.ac.uns.ftn.siit.recepti.model.TipObroka;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AdminPregledService {
@@ -21,11 +24,18 @@ public class AdminPregledService {
 
     @Transactional(readOnly = true)
     public AdminPregled pregled() {
+        Map<Long, List<Long>> namirnicePoAlergenu = new HashMap<>();
+        entityManager.createQuery("select a.id, n.id from Namirnica n join n.alergeni a order by n.id",
+                        Object[].class)
+                .getResultList().forEach(red ->
+                        namirnicePoAlergenu.computeIfAbsent((Long) red[0], id -> new ArrayList<>()).add((Long) red[1]));
+
         List<AdminPregled.Stavka> alergeni = entityManager
                 .createQuery("select a from Alergen a order by a.naziv", Alergen.class)
                 .getResultList()
                 .stream()
-                .map(a -> new AdminPregled.Stavka(a.getId(), a.getNaziv(), a.isAktivan(), a.getOpis()))
+                .map(a -> new AdminPregled.Stavka(a.getId(), a.getNaziv(), a.isAktivan(), a.getOpis(),
+                        namirnicePoAlergenu.getOrDefault(a.getId(), List.of())))
                 .toList();
 
         return new AdminPregled(
