@@ -43,6 +43,21 @@ public class PrijavaService {
             throw new NeaktiviranNalogException("Nalog nije aktiviran. Aktivirajte ga preko linka iz mejla.");
         }
 
+        return noviToken(korisnik);
+    }
+
+    //Korisnik sa vazecim tokenom dobija novi, sa punim trajanjem. Veb aplikacija ovo poziva pri svakom
+    //otvaranju, pa korisnik koji koristi aplikaciju ostaje prijavljen dok se sam ne odjavi.
+    @Transactional(readOnly = true)
+    public PrijavaOdgovor osvezi(Long idKorisnika) {
+        //Nalog koji je u medjuvremenu obrisan ili deaktiviran ne dobija novi token
+        Korisnik korisnik = korisnikRepository.findById(idKorisnika)
+                .filter(Korisnik::isAktiviran)
+                .orElseThrow(() -> new NeuspesnaPrijavaException("Sesija vise ne vazi. Prijavite se ponovo."));
+        return noviToken(korisnik);
+    }
+
+    private PrijavaOdgovor noviToken(Korisnik korisnik) {
         Instant istice = jwtService.vremeIsteka();
         String token = jwtService.napraviToken(korisnik, istice);
         return new PrijavaOdgovor(token, istice, korisnik.getKorisnickoIme(), korisnik.getUloga().name());
